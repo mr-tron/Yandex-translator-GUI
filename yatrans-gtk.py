@@ -11,9 +11,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import os
 CURRDIR = os.path.dirname(os.path.abspath(__file__))
-print (CURRDIR)
-# could be PNG or SVG as well
-ICON = os.path.join(CURRDIR, 'python3.xpm')
+ICON = os.path.join(CURRDIR, 'yandex-48.xpm')
 
 headers = {
     'User-Agent': ('Mozilla/5.0 (Windows NT 6.0; rv:14.0) Gecko/20100101 '
@@ -31,7 +29,8 @@ headers = {
 }
 URLDETECT = "https://translate.yandex.net/api/v1.5/tr.json/detect"
 URLTRANS = "https://translate.yandex.net/api/v1.5/tr.json/translate"
-KEY = "trnsl.1.1.20191018T044543Z.47802497546c44b3.a3320688fe20c6d7ec26f5a0a76d1930ba9696ac"
+KEY = "YOUR-KEY"
+FONT = 'Menlo Regular 24'
 
 def clip():
     clipboard = Gtk.Clipboard.get(Gdk.SELECTION_PRIMARY)
@@ -65,7 +64,8 @@ def translate():
 
 class TextViewWindow(Gtk.Window):
     def __init__(self):
-        Gtk.Window.__init__(self, title=f"Translate {detect()}")
+        Gtk.Window.__init__(self, title=f"Yandex Translator {detect()}")
+        self.set_border_width(4)
         self.set_default_size(1000, 350)
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.grid = Gtk.Grid()
@@ -74,6 +74,7 @@ class TextViewWindow(Gtk.Window):
         self.create_toolbar()
         self.key_Esc = Gdk.keyval_from_name("Escape")
         self.connect("key-press-event", self._key)
+        self.set_style()
 
     def create_toolbar(self):
         toolbar = Gtk.Toolbar()
@@ -92,14 +93,36 @@ class TextViewWindow(Gtk.Window):
         scrolledwindow.set_hexpand(True)
         scrolledwindow.set_vexpand(True)
         self.grid.attach(scrolledwindow, 0, 0, 2, 1)
-        self.textview = Gtk.TextView()
+        self.textview = Gtk.TextView(editable=False, wrap_mode=Gtk.WrapMode.WORD,
+                                     cursor_visible=False, indent=8)
         self.textbuffer = self.textview.get_buffer()
-        self.textbuffer.set_text(f"{translate()}\n\n ©Yandex\n http://translate.yandex.com")
+        self.textbuffer.set_text(f"{translate()}")
         scrolledwindow.add(self.textview)
-        self.textview.set_wrap_mode(Gtk.WrapMode.WORD)
         self.tag_bold = self.textbuffer.create_tag("bold",
                                                    weight=Pango.Weight.BOLD)
-        self.textview.modify_font(Pango.FontDescription('Menlo Regular 24'))
+        self.textview.modify_font(Pango.FontDescription(FONT))
+
+    def set_style(self):
+        css = b"""
+        textview {
+            background-color: lightgray;
+            padding: 8px 0 0 0 ;
+        }
+        textview text {
+            background-color: lightgray;
+            border-style: solid;
+            border-width: 2px;
+            border-color: #ddd;
+        }
+        """
+        style_provider = Gtk.CssProvider()
+        style_provider.load_from_data(css)
+
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            style_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
 
     def _key(self, widg, event):
         if event.keyval == self.key_Esc:
@@ -107,5 +130,6 @@ class TextViewWindow(Gtk.Window):
 
 win = TextViewWindow()
 win.connect("destroy", Gtk.main_quit)
+#win.set_icon_from_file(ICON)
 win.show_all()
 Gtk.main()
